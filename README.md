@@ -20,18 +20,18 @@
 
 ## Challenge: Cat Tinder API Setup
 ### As a developer, I can create a new Rails application with a Postgresql database.
-        
+
         $ rails new cat-tinder-backend -d postgresql -T
         $ cd cat-tinder-backend
         $ rails db:create
 
 ### As a developer, I can create a RSpec testing suite in my Rails application.
-        
+
         $ bundle add rspec-rails
         $ rails generate rspec:install
 
 ### As a developer, I can add a resource for Cat that has a name, an age, what the cat enjoys doing, and an image.
-        
+
         $ rails generate resource Cat name:string age:integer enjoys:text image:text
         $ rails db:migrate
 
@@ -66,7 +66,7 @@
 ```
 
 ### As a developer, I can run the rails command to add cats to database.
-              
+
         $ rails db:seed
 
 ## Challenge: Cat Tinder API CORS
@@ -81,7 +81,7 @@
         gem 'rack-cors', :require => 'rack/cors'
 ```
 ### As a developer, I can add the cors.rb file to my application.
-        
+
         $ cd initializers
         $ touch cor.rb
         $ bundle
@@ -100,4 +100,144 @@
          methods: [:get, :post, :put, :patch, :delete, :options, :head]
          end
         end
+```
+
+###Challenge: Cat Tinder API Endpoints
+
+###As a developer, I can add an index request spec to my application.
+``` ruby
+        describe "GET /index" do
+          it "gets a list of cats" do
+            Cat.create(
+              name: 'Garfield',
+              age: 9,
+              enjoys: 'Eating lasagna',
+              image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+            )
+
+            get '/cats'
+            cat = JSON.parse(response.body)
+            expect(response).to have_http_status(200)
+            expect(cat.length).to eq 1
+            end
+        end
+```
+
+###As a developer, I can add an index endpoint to my application.
+```ruby
+        def index
+          cats = Cat.all
+          render json: cats
+        end
+```
+
+###As a developer, I can add a create request spec to my application.
+```ruby
+        describe "POST /create" do
+          it "creates a cat" do
+            cat_params = {
+              cat: {
+                name: 'Neo',
+                age: 9,
+                enjoys: 'Attention from humans.',
+                image: 'https://cdn.pixabay.com/photo/2019/06/09/12/56/cat-4262034_1280.jpg'
+              }
+            }
+
+            post '/cats', params: cat_params
+            expect(response).to have_http_status(200)
+
+            cat = Cat.first
+            expect(cat.name).to eq 'Neo'
+            expect(cat.age).to eq 9
+            expect(cat.enjoys).to eq 'Attention from humans.'
+            expect(cat.image).to eq 'https://cdn.pixabay.com/photo/2019/06/09/12/56/cat-4262034_1280.jpg'
+          end
+        end
+```
+###As a developer, I can add a create endpoint to my application.
+```ruby
+        def create
+          cat = Cat.create(strong_cat_params)
+          if cat.valid?
+            render json: cat
+          else
+            render json: cat.errors
+          end
+        end
+```
+###Stretch Goals
+###As a developer, I can add an update request spec to my application.
+```ruby
+      describe "UPDATE /patch" do
+        it "updates a cat" do
+          Cat.create(
+            name: 'Garfield',
+            age: 9,
+            enjoys: 'Eating lasagna',
+            image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+          )
+          cat_garfield = Cat.first
+
+          cat_params = {
+            cat: {
+              name:'Garfield',
+              age: 10,
+              enjoys: 'Eating lasagna',
+              image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+            }
+          }
+          patch "/cats/#{cat_garfield.id}", params: cat_params
+          cat_mystery = Cat.find(cat_garfield.id)
+          expect(response).to have_http_status(200)
+          expect(cat_mystery.age).to eq 10
+        end
+      end
+```
+###As a developer, I can add an update endpoint to my application.
+```ruby
+      def update
+        cat = Cat.find(params[:id])
+        cat.update(strong_cat_params)
+        if cat.valid?
+          render json: cat
+        else
+          render json: cat.errors
+        end
+      end
+```
+###As a developer, I can add a destroy request spec to my application.
+```ruby
+      describe "DELETE /destroy" do
+        it "deletes a cat" do
+          Cat.create(
+            name: 'Garfield',
+            age: 9,
+            enjoys: 'Eating lasagna',
+            image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+          )
+          cat_garfield = Cat.first
+          delete "/cats/#{cat_garfield.id}"
+          expect(response).to have_http_status(200)
+          cats = Cat.all
+          expect(cats).to be_empty
+        end
+      end
+```
+###As a developer, I can add a destroy endpoint to my application.
+```ruby
+      def destroy
+        cat = Cat.find(params[:id])
+        if cat.destroy
+          render json: cat
+        else
+          render json: cat.errors
+        end
+      end
+
+      private
+      def strong_cat_params
+        params.require(:cat).permit(:name, :age, :enjoys, :image)
+      end
+    end
 ```
