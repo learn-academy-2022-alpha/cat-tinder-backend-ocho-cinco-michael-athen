@@ -102,9 +102,9 @@
         end
 ```
 
-###Challenge: Cat Tinder API Endpoints
+### Challenge: Cat Tinder API Endpoints
 
-###As a developer, I can add an index request spec to my application.
+### As a developer, I can add an index request spec to my application.
 ``` ruby
         describe "GET /index" do
           it "gets a list of cats" do
@@ -123,7 +123,7 @@
         end
 ```
 
-###As a developer, I can add an index endpoint to my application.
+### As a developer, I can add an index endpoint to my application.
 ```ruby
         def index
           cats = Cat.all
@@ -131,7 +131,7 @@
         end
 ```
 
-###As a developer, I can add a create request spec to my application.
+### As a developer, I can add a create request spec to my application.
 ```ruby
         describe "POST /create" do
           it "creates a cat" do
@@ -155,7 +155,7 @@
           end
         end
 ```
-###As a developer, I can add a create endpoint to my application.
+### As a developer, I can add a create endpoint to my application.
 ```ruby
         def create
           cat = Cat.create(strong_cat_params)
@@ -166,8 +166,8 @@
           end
         end
 ```
-###Stretch Goals
-###As a developer, I can add an update request spec to my application.
+### Stretch Goals
+### As a developer, I can add an update request spec to my application.
 ```ruby
       describe "UPDATE /patch" do
         it "updates a cat" do
@@ -194,7 +194,7 @@
         end
       end
 ```
-###As a developer, I can add an update endpoint to my application.
+### As a developer, I can add an update endpoint to my application.
 ```ruby
       def update
         cat = Cat.find(params[:id])
@@ -206,7 +206,7 @@
         end
       end
 ```
-###As a developer, I can add a destroy request spec to my application.
+### As a developer, I can add a destroy request spec to my application.
 ```ruby
       describe "DELETE /destroy" do
         it "deletes a cat" do
@@ -224,7 +224,7 @@
         end
       end
 ```
-###As a developer, I can add a destroy endpoint to my application.
+### As a developer, I can add a destroy endpoint to my application.
 ```ruby
       def destroy
         cat = Cat.find(params[:id])
@@ -238,6 +238,245 @@
       private
       def strong_cat_params
         params.require(:cat).permit(:name, :age, :enjoys, :image)
+      end
+    end
+```
+### Challenge: Cat Tinder API Validations
+### As a developer, I can add the appropriate model specs that will ensure an incomplete cat throws an error.
+```ruby
+    it "should validate name" do
+      cat = Cat.create age:4, enjoys:"Sleeping", image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+      p cat.errors[:name]
+      expect(cat.errors[:name]).to_not be_empty
+    end
+    it "should validate age" do
+      cat = Cat.create name:"Mike", enjoys:"Sleeping", image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+      p cat.errors[:age]
+      expect(cat.errors[:age]).to_not be_empty
+    end
+    it "should validate enjoys" do
+      cat = Cat.create name:"Mike", age:4, image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+      p cat.errors[:enjoys]
+      expect(cat.errors[:enjoys]).to_not be_empty
+    end
+    it "should validate image" do
+      cat = Cat.create name:"Mike", age:4, enjoys:"Sleeping"
+      p cat.errors[:image]
+      expect(cat.errors[:image]).to_not be_empty
+    end
+```
+
+### As a developer, I can add the appropriate model validations to ensure the user submits a name, an age, what the cat enjoys, and an image.
+```ruby
+    validates :name, :age, :enjoys, :image, presence: true
+```
+
+### As a developer, I can add the appropriate model specs that will ensure a cat enjoys entry is at least 10 characters long.
+```ruby
+    it "enjoys should be at least 10 characters long" do
+      cat = Cat.create name:"Mike", age:4, enjoys:"Sleeping", image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+      p cat.errors[:enjoys]
+      expect(cat.errors[:enjoys]).to_not be_empty
+end
+```
+
+### As a developer, I can add a validation to assure that will ensure a cat enjoys entry is at least 10 characters long.
+```ruby
+    validates :enjoys, length: { minimum: 10 }
+```
+### As a developer, I can add the appropriate request validations to ensure the API is sending useful information to the frontend developer if a new cat is not valid.
+```ruby
+    describe "cat should have valid attributes" do
+      it "doesn't create a cat without a name" do
+        cat_params = {
+          cat: {
+            age:4,
+            enjoys:"Sleeping",
+            image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+          }
+        }
+        post '/cats', params: cat_params
+        cat = JSON.parse(response.body)
+        expect(response).to have_http_status(422)
+        expect(cat['name']).to include "can't be blank"
+      end
+      it "doesn't create a cat without a age" do
+        cat_params = {
+          cat: {
+            name:"Mike",
+            enjoys:"Sleeping",
+            image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+          }
+        }
+        post '/cats', params: cat_params
+        cat = JSON.parse(response.body)
+        expect(response).to have_http_status(422)
+        expect(cat['age']).to include "can't be blank"
+      end
+      it "doesn't create a cat without a enjoys" do
+        cat_params = {
+          cat: {
+            name:"Mike",
+            age:4,
+            image:"https://upload.wikimedia.org/wikipedia/commons/3/38/Adorable-animal-cat-20787.jpg"
+          }
+        }
+        post '/cats', params: cat_params
+        cat = JSON.parse(response.body)
+        expect(response).to have_http_status(422)
+        expect(cat['enjoys']).to include "can't be blank"
+      end
+      it "doesn't create a cat without a image" do
+        cat_params = {
+          cat: {
+            name:"Mike",
+            age:4,
+            enjoys:"Sleeping"
+          }
+        }
+        post '/cats', params: cat_params
+        cat = JSON.parse(response.body)
+        expect(response).to have_http_status(422)
+        expect(cat['image']).to include "can't be blank"
+      end
+    end
+```
+
+### As a developer, I can add the appropriate request spec that will look for a 422 error if the create validations are not met.
+```ruby
+    def create
+      cat = Cat.create(strong_cat_params)
+      if cat.valid?
+        render json: cat
+      else
+        render json: cat.errors, status:422
+      end
+    end
+```
+
+### STRETCH: As a developer, I can add the appropriate request validations to ensure the API is sending useful information to the frontend developer if an updated cat is not valid.
+```ruby
+    it "does not update a cat with no name" do
+      Cat.create(
+        name: 'Garfield',
+        age: 9,
+        enjoys: 'Eating lasagna',
+        image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+      )
+      cat_garfield = Cat.first
+
+      cat_params = {
+        cat: {
+          name:"",
+          age: 9,
+          enjoys: 'Eating lasagna',
+          image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+        }
+      }
+      patch "/cats/#{cat_garfield.id}", params: cat_params
+      cat = JSON.parse(response.body)
+      expect(response).to have_http_status(422)
+      expect(cat['name']).to include "can't be blank"
+    end
+    it "does not update a cat with no age" do
+      Cat.create(
+        name: 'Garfield',
+        age: 9,
+        enjoys: 'Eating lasagna',
+        image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+      )
+      cat_garfield = Cat.first
+
+      cat_params = {
+        cat: {
+          name:"Garfield",
+          age: "",
+          enjoys: 'Eating lasagna',
+          image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+        }
+      }
+      patch "/cats/#{cat_garfield.id}", params: cat_params
+      cat = JSON.parse(response.body)
+      expect(response).to have_http_status(422)
+      expect(cat['age']).to include "can't be blank"
+    end
+    it "does not update a cat with no enjoys" do
+      Cat.create(
+        name: 'Garfield',
+        age: 9,
+        enjoys: 'Eating lasagna',
+        image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+      )
+      cat_garfield = Cat.first
+
+      cat_params = {
+        cat: {
+          name:"Garfield",
+          age: 9,
+          enjoys: "",
+          image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+        }
+      }
+      patch "/cats/#{cat_garfield.id}", params: cat_params
+      cat = JSON.parse(response.body)
+      expect(response).to have_http_status(422)
+      expect(cat['enjoys']).to include "can't be blank"
+    end
+    it "does not update a cat with enjoys being less than 10 characters" do
+      Cat.create(
+        name: 'Garfield',
+        age: 9,
+        enjoys: 'Eating lasagna',
+        image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+      )
+      cat_garfield = Cat.first
+
+      cat_params = {
+        cat: {
+          name:"Garfield",
+          age: 9,
+          enjoys: "Sleep",
+          image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+        }
+      }
+      patch "/cats/#{cat_garfield.id}", params: cat_params
+      cat = JSON.parse(response.body)
+      expect(response).to have_http_status(422)
+      expect(cat['enjoys']).to include "is too short (minimum is 10 characters)"
+    end
+    it "does not update a cat with no image" do
+      Cat.create(
+        name: 'Garfield',
+        age: 9,
+        enjoys: 'Eating lasagna',
+        image: 'https://live.staticflickr.com/7174/6599346995_4d7efdf923_c.jpg'
+      )
+      cat_garfield = Cat.first
+
+      cat_params = {
+        cat: {
+          name:"Garfield",
+          age: 9,
+          enjoys: "",
+          image: ""
+        }
+      }
+      patch "/cats/#{cat_garfield.id}", params: cat_params
+      cat = JSON.parse(response.body)
+      expect(response).to have_http_status(422)
+      expect(cat['image']).to include "can't be blank"
+    end
+```
+### STRETCH: As a developer, I can add the appropriate request spec that will look for a 422 error if the update validations are not met.
+
+```ruby
+    def update
+      cat = Cat.find(params[:id])
+      cat.update(strong_cat_params)
+      if cat.valid?
+        render json: cat
+      else
+        render json: cat.errors, status:422
       end
     end
 ```
